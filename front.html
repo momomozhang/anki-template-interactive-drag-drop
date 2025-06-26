@@ -165,7 +165,7 @@
                     });
 
                     // Remove ícones anteriores
-                    termElement.querySelectorAll('.question-plus-one, .question-minus-one').forEach(icon => icon.remove());
+                    termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
 
                     if (isCorrect) {
                         termElement.classList.add('correct');
@@ -177,6 +177,11 @@
                         termElement.classList.remove('correct');
                         // Adiciona ícone de -1
                         termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
+                        // Find and show correct category
+                        const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                        if (correctCategory) {
+                            termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
+                        }
                     }
                 });
             });
@@ -188,15 +193,46 @@
                 termElement.classList.add('incorrect');
                 termElement.classList.remove('correct');
                 // Remove ícones anteriores
-                termElement.querySelectorAll('.question-plus-one, .question-minus-one').forEach(icon => icon.remove());
+                termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
                 // Adicionar ícone de -1
                 termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
+                // Find and show correct category for forgotten terms
+                const term = termElement.innerText.trim();
+                const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                if (correctCategory) {
+                    termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
+                }
             });
 
             document.getElementById("resetButton").style.display = 'block';
         }
 
         initializeGame();
+    }
+
+    function findCorrectCategory(term, validTerms, validHeaders) {
+        // Debug: log what we're searching for
+        console.log('Looking for term:', term);
+        console.log('Valid terms structure:', validTerms);
+        console.log('Valid headers:', validHeaders);
+        
+        for (let i = 0; i < validTerms.length; i++) {
+            const categoryTerms = validTerms[i];
+            // Handle the case where categoryTerms is an array of terms
+            for (let j = 0; j < categoryTerms.length; j++) {
+                const currentTerm = categoryTerms[j];
+                // Handle multiple answers separated by |
+                const possibleAnswers = currentTerm.split('|').map(t => t.trim());
+                console.log(`Checking category ${validHeaders[i]}, term ${currentTerm}, possible answers:`, possibleAnswers);
+                
+                if (possibleAnswers.includes(term.trim())) {
+                    console.log('Found match in category:', validHeaders[i]);
+                    return validHeaders[i];
+                }
+            }
+        }
+        console.log('No match found for term:', term);
+        return null;
     }
 
     function generateTable(layout, headers) {
