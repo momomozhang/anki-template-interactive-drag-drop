@@ -63,10 +63,38 @@
 
         const termsContainer = document.getElementById("terms-container");
 
-        function initializeGame() {
+        function initializeGame(layoutParam, validTermsParam, allTermsParam, termsContainerParam) {
             clearTable();
-            allTerms = allTerms.sort(() => Math.random() - 0.5);
-            termsContainer.innerHTML = allTerms.map(term => `<div class="term draggable" draggable="true">${term}</div>`).join('');
+            
+            // Check if we should show solution (only exists on back side)
+            if (window.ankiShowSolution === true) {
+                // Solution mode - display correct answers
+                validTermsParam.forEach((categoryTerms, index) => {
+                    const dropzoneId = layoutParam === 'V' ? `col${index + 1}-vert` : `col${index + 1}`;
+                    const dropzone = document.getElementById(dropzoneId);
+                    
+                    if (dropzone) {
+                        categoryTerms.forEach(termString => {
+                            const terms = termString.split('|').map(t => t.trim());
+                            terms.forEach(term => {
+                                if (term) {
+                                    dropzone.innerHTML += `<div class="term correct">${term}<div class="question-plus-one"></div></div>`;
+                                }
+                            });
+                        });
+                    }
+                });
+                
+                // Hide interactive elements
+                if (termsContainerParam) termsContainerParam.style.display = 'none';
+                const checkButton = document.getElementById("checkButton");
+                if (checkButton) checkButton.style.display = 'none';
+                return;
+            }
+            
+            // Original game logic
+            allTermsParam = allTermsParam.sort(() => Math.random() - 0.5);
+            termsContainerParam.innerHTML = allTermsParam.map(term => `<div class="term draggable" draggable="true">${term}</div>`).join('');
 
             const draggableItems = document.querySelectorAll('.draggable');
             draggableItems.forEach(item => {
@@ -141,7 +169,7 @@
         }
 
         document.getElementById("checkButton").addEventListener('click', checkAnswers);
-        document.getElementById("resetButton").addEventListener('click', initializeGame);
+        document.getElementById("resetButton").addEventListener('click', () => initializeGame(layout, validTerms, allTerms, termsContainer));
 
         function checkAnswers() {
             const dropzones = document.querySelectorAll('.dropzone');
@@ -207,7 +235,7 @@
             document.getElementById("resetButton").style.display = 'block';
         }
 
-        initializeGame();
+        initializeGame(layout, validTerms, allTerms, termsContainer);
     }
 
     function findCorrectCategory(term, validTerms, validHeaders) {
