@@ -3,12 +3,16 @@
 <p id="header3-field" style="display:none;">{{Header3}}</p>
 <p id="header4-field" style="display:none;">{{Header4}}</p>
 <p id="header5-field" style="display:none;">{{Header5}}</p>
+<p id="header6-field" style="display:none;">{{Header6}}</p>
+<p id="header7-field" style="display:none;">{{Header7}}</p>
 
 <p id="terms1-field" style="display:none;">{{Terms1}}</p>
 <p id="terms2-field" style="display:none;">{{Terms2}}</p>
 <p id="terms3-field" style="display:none;">{{Terms3}}</p>
 <p id="terms4-field" style="display:none;">{{Terms4}}</p>
 <p id="terms5-field" style="display:none;">{{Terms5}}</p>
+<p id="terms6-field" style="display:none;">{{Terms6}}</p>
+<p id="terms7-field" style="display:none;">{{Terms7}}</p>
 
 <p id="layout-field" style="display:none;">{{Layout}}</p>
 
@@ -32,7 +36,9 @@
             document.getElementById("header2-field").innerText,
             document.getElementById("header3-field").innerText,
             document.getElementById("header4-field").innerText,
-            document.getElementById("header5-field").innerText
+            document.getElementById("header5-field").innerText,
+            document.getElementById("header6-field").innerText,
+            document.getElementById("header7-field").innerText
         ];
 
         const terms = [
@@ -40,7 +46,9 @@
             document.getElementById("terms2-field").innerText.split("|"),
             document.getElementById("terms3-field").innerText.split("|"),
             document.getElementById("terms4-field").innerText.split("|"),
-            document.getElementById("terms5-field").innerText.split("|")
+            document.getElementById("terms5-field").innerText.split("|"),
+            document.getElementById("terms6-field").innerText.split("|"),
+            document.getElementById("terms7-field").innerText.split("|")
         ];
 
         // Filtrar cabeçalhos e termos que estão em branco
@@ -55,10 +63,38 @@
 
         const termsContainer = document.getElementById("terms-container");
 
-        function initializeGame() {
+        function initializeGame(layoutParam, validTermsParam, allTermsParam, termsContainerParam) {
             clearTable();
-            allTerms = allTerms.sort(() => Math.random() - 0.5);
-            termsContainer.innerHTML = allTerms.map(term => `<div class="term draggable" draggable="true">${term}</div>`).join('');
+            
+            // Check if we should show solution (only exists on back side)
+            if (window.ankiShowSolution === true) {
+                // Solution mode - display correct answers
+                validTermsParam.forEach((categoryTerms, index) => {
+                    const dropzoneId = layoutParam === 'V' ? `col${index + 1}-vert` : `col${index + 1}`;
+                    const dropzone = document.getElementById(dropzoneId);
+                    
+                    if (dropzone) {
+                        categoryTerms.forEach(termString => {
+                            const terms = termString.split('|').map(t => t.trim());
+                            terms.forEach(term => {
+                                if (term) {
+                                    dropzone.innerHTML += `<div class="term correct">${term}<div class="question-plus-one"></div></div>`;
+                                }
+                            });
+                        });
+                    }
+                });
+                
+                // Hide interactive elements
+                if (termsContainerParam) termsContainerParam.style.display = 'none';
+                const checkButton = document.getElementById("checkButton");
+                if (checkButton) checkButton.style.display = 'none';
+                return;
+            }
+            
+            // Original game logic
+            allTermsParam = allTermsParam.sort(() => Math.random() - 0.5);
+            termsContainerParam.innerHTML = allTermsParam.map(term => `<div class="term draggable" draggable="true">${term}</div>`).join('');
 
             const draggableItems = document.querySelectorAll('.draggable');
             draggableItems.forEach(item => {
@@ -133,7 +169,7 @@
         }
 
         document.getElementById("checkButton").addEventListener('click', checkAnswers);
-        document.getElementById("resetButton").addEventListener('click', initializeGame);
+        document.getElementById("resetButton").addEventListener('click', () => initializeGame(layout, validTerms, allTerms, termsContainer));
 
         function checkAnswers() {
             const dropzones = document.querySelectorAll('.dropzone');
@@ -157,7 +193,7 @@
                     });
 
                     // Remove ícones anteriores
-                    termElement.querySelectorAll('.question-plus-one, .question-minus-one').forEach(icon => icon.remove());
+                    termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
 
                     if (isCorrect) {
                         termElement.classList.add('correct');
@@ -169,6 +205,11 @@
                         termElement.classList.remove('correct');
                         // Adiciona ícone de -1
                         termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
+                        // Find and show correct category
+                        const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                        if (correctCategory) {
+                            termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
+                        }
                     }
                 });
             });
@@ -180,15 +221,46 @@
                 termElement.classList.add('incorrect');
                 termElement.classList.remove('correct');
                 // Remove ícones anteriores
-                termElement.querySelectorAll('.question-plus-one, .question-minus-one').forEach(icon => icon.remove());
+                termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
                 // Adicionar ícone de -1
                 termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
+                // Find and show correct category for forgotten terms
+                const term = termElement.innerText.trim();
+                const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                if (correctCategory) {
+                    termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
+                }
             });
 
             document.getElementById("resetButton").style.display = 'block';
         }
 
-        initializeGame();
+        initializeGame(layout, validTerms, allTerms, termsContainer);
+    }
+
+    function findCorrectCategory(term, validTerms, validHeaders) {
+        // Debug: log what we're searching for
+        console.log('Looking for term:', term);
+        console.log('Valid terms structure:', validTerms);
+        console.log('Valid headers:', validHeaders);
+        
+        for (let i = 0; i < validTerms.length; i++) {
+            const categoryTerms = validTerms[i];
+            // Handle the case where categoryTerms is an array of terms
+            for (let j = 0; j < categoryTerms.length; j++) {
+                const currentTerm = categoryTerms[j];
+                // Handle multiple answers separated by |
+                const possibleAnswers = currentTerm.split('|').map(t => t.trim());
+                console.log(`Checking category ${validHeaders[i]}, term ${currentTerm}, possible answers:`, possibleAnswers);
+                
+                if (possibleAnswers.includes(term.trim())) {
+                    console.log('Found match in category:', validHeaders[i]);
+                    return validHeaders[i];
+                }
+            }
+        }
+        console.log('No match found for term:', term);
+        return null;
     }
 
     function generateTable(layout, headers) {
