@@ -28,7 +28,101 @@
 </div>
 
 <script>
+// anki-persistence library
+if (typeof(window.Persistence) === 'undefined') {
+    var _persistenceKey = 'github.com/SimonLammer/anki-persistence/';
+    var _defaultKey = '_default';
+    window.Persistence_sessionStorage = function() {
+        var isAvailable = false;
+        try {
+            if (typeof(window.sessionStorage) === 'object') {
+                isAvailable = true;
+                this.clear = function() {
+                    for (var i = 0; i < sessionStorage.length; i++) {
+                        var k = sessionStorage.key(i);
+                        if (k.indexOf(_persistenceKey) == 0) {
+                            sessionStorage.removeItem(k);
+                            i--;
+                        }
+                    }
+                };
+                this.setItem = function(key, value) {
+                    if (value == undefined) {
+                        value = key;
+                        key = _defaultKey;
+                    }
+                    sessionStorage.setItem(_persistenceKey + key, JSON.stringify(value));
+                };
+                this.getItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    return JSON.parse(sessionStorage.getItem(_persistenceKey + key));
+                };
+                this.removeItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    sessionStorage.removeItem(_persistenceKey + key);
+                };
+            }
+        } catch(err) {}
+        this.isAvailable = function() {
+            return isAvailable;
+        };
+    };
+    window.Persistence_windowKey = function(key) {
+        var isAvailable = false;
+        try {
+            if (typeof(window[key]) === 'object') {
+                isAvailable = true;
+                this.clear = function() {
+                    window[key] = {};
+                };
+                this.setItem = function(key, value) {
+                    if (value == undefined) {
+                        value = key;
+                        key = _defaultKey;
+                    }
+                    window[key][_persistenceKey + key] = value;
+                };
+                this.getItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    return window[key][_persistenceKey + key];
+                };
+                this.removeItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    delete window[key][_persistenceKey + key];
+                };
+            }
+        } catch(err) {}
+        this.isAvailable = function() {
+            return isAvailable;
+        };
+    };
+    window.Persistence = new Persistence_sessionStorage();
+    if (!window.Persistence.isAvailable()) {
+        window.Persistence = new Persistence_windowKey(window.location.href);
+        if (!window.Persistence.isAvailable()) {
+            window.Persistence = new Persistence_windowKey('anki-persistence');
+        }
+    }
+}
+
     function run() {
+        // Always clear state at the beginning of front side to prevent persistence issues
+        if (window.Persistence && window.Persistence.isAvailable()) {
+            // Only clear if this is truly a fresh front side load (not back side)
+            const isBackSide = window.Persistence.getItem('showSolution');
+            if (!isBackSide) {
+                window.Persistence.clear();
+            }
+        }
+        
         const layout = document.getElementById("layout-field").innerText.trim().toUpperCase();
 
         const headers = [
@@ -66,30 +160,19 @@
         function initializeGame(layoutParam, validTermsParam, allTermsParam, termsContainerParam) {
             clearTable();
             
+            // Check if we should show solution (back side)
+            const isBackSide = window.Persistence && window.Persistence.isAvailable() && window.Persistence.getItem('showSolution');
             
-            // Check if we should show solution (only exists on back side)
-            if (window.ankiShowSolution) {
+            if (isBackSide) {
                 // Solution mode - display correct answers
-                validTermsParam.forEach((categoryTerms, index) => {
-                    const dropzoneId = layoutParam === 'V' ? `col${index + 1}-vert` : `col${index + 1}`;
-                    const dropzone = document.getElementById(dropzoneId);
-                    
-                    if (dropzone) {
-                        categoryTerms.forEach(termString => {
-                            const terms = termString.split('|').map(t => t.trim());
-                            terms.forEach(term => {
-                                if (term) {
-                                    dropzone.innerHTML += `<div class="term correct">${term}<div class="question-plus-one"></div></div>`;
-                                }
-                            });
-                        });
-                    }
-                });
+                showSolution(layoutParam, validTermsParam);
                 
                 // Hide interactive elements
                 if (termsContainerParam) termsContainerParam.style.display = 'none';
                 const checkButton = document.getElementById("checkButton");
                 if (checkButton) checkButton.style.display = 'none';
+                const resetButton = document.getElementById("resetButton");
+                if (resetButton) resetButton.style.display = 'none';
                 return;
             }
             
@@ -110,6 +193,24 @@
             });
 
             document.getElementById("resetButton").style.display = 'none';
+        }
+        
+        function showSolution(layoutParam, validTermsParam) {
+            validTermsParam.forEach((categoryTerms, index) => {
+                const dropzoneId = layoutParam === 'V' ? `col${index + 1}-vert` : `col${index + 1}`;
+                const dropzone = document.getElementById(dropzoneId);
+                
+                if (dropzone) {
+                    categoryTerms.forEach(termString => {
+                        const terms = termString.split('|').map(t => t.trim());
+                        terms.forEach(term => {
+                            if (term) {
+                                dropzone.innerHTML += `<div class="term correct">${term}<div class="question-plus-one"></div></div>`;
+                            }
+                        });
+                    });
+                }
+            });
         }
 
         function clearTable() {
