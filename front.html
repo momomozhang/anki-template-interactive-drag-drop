@@ -19,7 +19,7 @@
 <div class="game-container">
     <h1>{{Title}}</h1>
 
-    <!-- Tabelas serão criadas dinamicamente via JavaScript -->
+    <!-- Tables will be created dynamically via JavaScript -->
     <div id="dynamic-table"></div>
 
     <div id="terms-container"></div>
@@ -51,13 +51,13 @@
             document.getElementById("terms7-field").innerText.split("|")
         ];
 
-        // Filtrar cabeçalhos e termos que estão em branco
+        // Filter headers and terms that are blank
         const validHeaders = headers.filter((header, index) => header.trim() !== "" && terms[index].length > 0);
         const validTerms = terms.filter((termList, index) => headers[index].trim() !== "" && termList.length > 0);
 
-        let allTerms = validTerms.flat(); // Todos os termos para embaralhar
+        let allTerms = validTerms.flat(); // All terms to shuffle
 
-        // Criar dinamicamente a tabela com base no layout e cabeçalhos válidos
+        // Create table dynamically based on layout and valid headers
         const dynamicTable = document.getElementById("dynamic-table");
         dynamicTable.innerHTML = generateTable(layout, validHeaders);
 
@@ -66,8 +66,9 @@
         function initializeGame(layoutParam, validTermsParam, allTermsParam, termsContainerParam) {
             clearTable();
             
+            
             // Check if we should show solution (only exists on back side)
-            if (window.ankiShowSolution === true) {
+            if (window.ankiShowSolution) {
                 // Solution mode - display correct answers
                 validTermsParam.forEach((categoryTerms, index) => {
                     const dropzoneId = layoutParam === 'V' ? `col${index + 1}-vert` : `col${index + 1}`;
@@ -114,8 +115,8 @@
         function clearTable() {
             const dropzones = document.querySelectorAll('.dropzone');
             dropzones.forEach(zone => {
-                zone.innerHTML = ''; // Limpa todos os termos dentro das zonas de drop
-                zone.classList.remove('correct', 'incorrect'); // Remove as classes de estilo
+                zone.innerHTML = ''; // Clear all terms inside the drop zones
+                zone.classList.remove('correct', 'incorrect'); // Remove the style classes
             });
         }
 
@@ -174,36 +175,36 @@
         function checkAnswers() {
             const dropzones = document.querySelectorAll('.dropzone');
 
-            // Verificar os termos nas caixas (dropzones)
+            // Check the terms in the boxes (dropzones)
             dropzones.forEach((zone, index) => {
                 const termsInZone = Array.from(zone.getElementsByClassName('term'));
-                const expectedTerms = validTerms[index]; // Usa apenas termos válidos
+                const expectedTerms = validTerms[index]; // Use only valid terms
 
                 termsInZone.forEach(termElement => {
-                    const term = termElement.innerText.trim(); // Remover espaços desnecessários ao redor do termo
+                    const term = termElement.innerText.trim(); // Remove unnecessary spaces around the term
                     let isCorrect = false;
 
-                    // Verifica se o termo completo é igual ou se é parte dos termos separados por |
+                    // Check if the complete term is equal or if it's part of terms separated by |
                     expectedTerms.forEach(expectedTerm => {
-                        // Suprimir espaços ao redor de cada termo, mas manter os espaços internos
-                        const possibleAnswers = expectedTerm.split('|').map(t => t.trim()); // Usa trim() para cada termo
+                        // Remove spaces around each term, but keep internal spaces
+                        const possibleAnswers = expectedTerm.split('|').map(t => t.trim()); // Use trim() for each term
                         if (possibleAnswers.includes(term)) {
                             isCorrect = true;
                         }
                     });
 
-                    // Remove ícones anteriores
+                    // Remove previous icons
                     termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
 
                     if (isCorrect) {
                         termElement.classList.add('correct');
                         termElement.classList.remove('incorrect');
-                        // Adiciona ícone de +1
+                        // Add +1 icon
                         termElement.insertAdjacentHTML('beforeend', '<div class="question-plus-one"></div>');
                     } else {
                         termElement.classList.add('incorrect');
                         termElement.classList.remove('correct');
-                        // Adiciona ícone de -1
+                        // Add -1 icon
                         termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
                         // Find and show correct category
                         const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
@@ -214,15 +215,15 @@
                 });
             });
 
-            // Verificar os termos que não foram associados a nenhuma caixa (esquecidos)
+            // Check terms that were not associated with any box (forgotten)
             const remainingTerms = document.querySelectorAll('#terms-container .term');
             remainingTerms.forEach(termElement => {
-                // Marcar como incorretos (foram esquecidos)
+                // Mark as incorrect (were forgotten)
                 termElement.classList.add('incorrect');
                 termElement.classList.remove('correct');
-                // Remove ícones anteriores
+                // Remove previous icons
                 termElement.querySelectorAll('.question-plus-one, .question-minus-one, .correct-answer-hint').forEach(icon => icon.remove());
-                // Adicionar ícone de -1
+                // Add -1 icon
                 termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
                 // Find and show correct category for forgotten terms
                 const term = termElement.innerText.trim();
@@ -239,10 +240,6 @@
     }
 
     function findCorrectCategory(term, validTerms, validHeaders) {
-        // Debug: log what we're searching for
-        console.log('Looking for term:', term);
-        console.log('Valid terms structure:', validTerms);
-        console.log('Valid headers:', validHeaders);
         
         for (let i = 0; i < validTerms.length; i++) {
             const categoryTerms = validTerms[i];
@@ -251,29 +248,26 @@
                 const currentTerm = categoryTerms[j];
                 // Handle multiple answers separated by |
                 const possibleAnswers = currentTerm.split('|').map(t => t.trim());
-                console.log(`Checking category ${validHeaders[i]}, term ${currentTerm}, possible answers:`, possibleAnswers);
                 
                 if (possibleAnswers.includes(term.trim())) {
-                    console.log('Found match in category:', validHeaders[i]);
                     return validHeaders[i];
                 }
             }
         }
-        console.log('No match found for term:', term);
         return null;
     }
 
     function generateTable(layout, headers) {
         let tableHTML = '';
         if (layout === 'V') {
-            // Layout vertical
+            // Vertical layout
             tableHTML = `<table><thead><tr><th></th><th>Terms</th></tr></thead><tbody>`;
             headers.forEach((header, index) => {
                 tableHTML += `<tr><th>${header}</th><td id="col${index + 1}-vert" class="dropzone"></td></tr>`;
             });
             tableHTML += `</tbody></table>`;
         } else {
-            // Layout horizontal
+            // Horizontal layout
             tableHTML = `<table><thead><tr>`;
             headers.forEach((header, index) => {
                 tableHTML += `<th id="header${index + 1}">${header}</th>`;
