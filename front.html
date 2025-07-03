@@ -192,6 +192,11 @@ if (typeof(window.Persistence) === 'undefined') {
                 zone.addEventListener('drop', drop);
             });
 
+            // Add drag-drop capability to terms container
+            const termsContainer = document.getElementById("terms-container");
+            termsContainer.addEventListener('dragover', dragOver);
+            termsContainer.addEventListener('drop', drop);
+
             document.getElementById("resetButton").style.display = 'none';
         }
         
@@ -229,11 +234,19 @@ if (typeof(window.Persistence) === 'undefined') {
         function dragEnd(e) {
             setTimeout(() => {
                 e.target.classList.remove('hide');
+                // Remove visual feedback from terms container
+                const termsContainer = document.getElementById("terms-container");
+                termsContainer.classList.remove('dragover');
             }, 0);
         }
 
         function dragOver(e) {
             e.preventDefault();
+            // Add visual feedback for terms container
+            if (e.target.id === 'terms-container' || e.target.closest('#terms-container')) {
+                const termsContainer = document.getElementById("terms-container");
+                termsContainer.classList.add('dragover');
+            }
         }
 
         function drop(e) {
@@ -251,6 +264,18 @@ if (typeof(window.Persistence) === 'undefined') {
                 const draggedItem = document.querySelector(`.draggable.hide`);
                 if (draggedItem) draggedItem.remove();
 
+                reattachDragEvents();
+            } else if (targetZone.id === 'terms-container' || targetZone.closest('#terms-container')) {
+                // Handle drop back to terms container
+                const termsContainer = document.getElementById("terms-container");
+                termsContainer.innerHTML += `<div class="term draggable" draggable="true">${term}</div>`;
+                
+                const draggedItem = document.querySelector(`.draggable.hide`);
+                if (draggedItem) draggedItem.remove();
+                
+                // Remove visual feedback
+                termsContainer.classList.remove('dragover');
+                
                 reattachDragEvents();
             } else {
                 const draggedItem = document.querySelector(`.draggable.hide`);
