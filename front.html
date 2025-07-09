@@ -108,6 +108,10 @@
                 zone.addEventListener('drop', drop);
             });
 
+            // Add drag/drop events to terms container for reordering
+            termsContainerParam.addEventListener('dragover', dragOver);
+            termsContainerParam.addEventListener('drop', drop);
+
             document.getElementById("resetButton").style.display = 'none';
         }
 
@@ -127,11 +131,57 @@
         function dragEnd(e) {
             setTimeout(() => {
                 e.target.classList.remove('hide');
+                // Clear all drop indicators
+                document.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
             }, 0);
         }
 
         function dragOver(e) {
             e.preventDefault();
+            
+            // Clear existing indicators
+            document.querySelectorAll('.drop-indicator').forEach(indicator => indicator.remove());
+            
+            const targetZone = e.target;
+            
+            if (targetZone.classList.contains('term')) {
+                // Show insertion indicator for terms
+                const rect = targetZone.getBoundingClientRect();
+                const midpoint = rect.left + rect.width / 2;
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+                
+                if (e.clientX < midpoint) {
+                    indicator.classList.add('top');
+                } else {
+                    indicator.classList.add('bottom');
+                }
+                
+                targetZone.style.position = 'relative';
+                targetZone.appendChild(indicator);
+            } else if (targetZone.id === 'terms-container') {
+                // Show insertion indicator for container
+                const firstTerm = targetZone.querySelector('.term');
+                const indicator = document.createElement('div');
+                indicator.className = 'drop-indicator';
+                
+                if (firstTerm) {
+                    const firstTermRect = firstTerm.getBoundingClientRect();
+                    if (e.clientY < firstTermRect.top) {
+                        indicator.classList.add('container-top');
+                        targetZone.style.position = 'relative';
+                        targetZone.appendChild(indicator);
+                    } else {
+                        indicator.classList.add('container-bottom');
+                        targetZone.style.position = 'relative';
+                        targetZone.appendChild(indicator);
+                    }
+                } else {
+                    indicator.classList.add('container-top');
+                    targetZone.style.position = 'relative';
+                    targetZone.appendChild(indicator);
+                }
+            }
         }
 
         function drop(e) {
@@ -139,10 +189,41 @@
             const term = e.dataTransfer.getData('text/plain');
             const targetZone = e.target;
 
-            if (targetZone.classList.contains('dropzone') || targetZone.classList.contains('term')) {
+            if (targetZone.classList.contains('dropzone') || targetZone.classList.contains('term') || targetZone.id === 'terms-container') {
                 if (targetZone.classList.contains('term')) {
-                    targetZone.parentElement.innerHTML += `<div class="term draggable" draggable="true">${term}</div>`;
+                    // Handle insertion before/after existing term
+                    const rect = targetZone.getBoundingClientRect();
+                    const midpoint = rect.left + rect.width / 2;
+                    const newTerm = `<div class="term draggable" draggable="true">${term}</div>`;
+                    
+                    if (e.clientX < midpoint) {
+                        // Insert before the target term
+                        targetZone.insertAdjacentHTML('beforebegin', newTerm);
+                    } else {
+                        // Insert after the target term
+                        targetZone.insertAdjacentHTML('afterend', newTerm);
+                    }
+                } else if (targetZone.id === 'terms-container') {
+                    // Drop into terms container - check if dropping at beginning or end
+                    const containerRect = targetZone.getBoundingClientRect();
+                    const firstTerm = targetZone.querySelector('.term');
+                    const newTerm = `<div class="term draggable" draggable="true">${term}</div>`;
+                    
+                    if (firstTerm) {
+                        const firstTermRect = firstTerm.getBoundingClientRect();
+                        // If dropping before the first term, prepend
+                        if (e.clientY < firstTermRect.top) {
+                            targetZone.insertAdjacentHTML('afterbegin', newTerm);
+                        } else {
+                            // Otherwise append at end
+                            targetZone.innerHTML += newTerm;
+                        }
+                    } else {
+                        // Empty container, just add the term
+                        targetZone.innerHTML += newTerm;
+                    }
                 } else {
+                    // Drop into dropzone (append at end)
                     targetZone.innerHTML += `<div class="term draggable" draggable="true">${term}</div>`;
                 }
 

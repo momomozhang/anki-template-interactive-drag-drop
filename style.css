@@ -136,4 +136,38 @@
         opacity: 1;
         transition: opacity 150ms linear, transform 150ms linear;
     }
+
+    /* Drop insertion indicators */
+    .drop-indicator {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background-color: #58cc02;
+        border-radius: 2px;
+        z-index: 1000;
+        opacity: 0.8;
+        box-shadow: 0 0 5px rgba(88, 204, 2, 0.5);
+        pointer-events: none;
+    }
+
+    .drop-indicator.top {
+        top: -6px;
+    }
+
+    .drop-indicator.bottom {
+        bottom: -6px;
+    }
+
+    .drop-indicator.container-top {
+        top: -8px;
+        background-color: #ff6b6b;
+        box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+    }
+
+    .drop-indicator.container-bottom {
+        bottom: -8px;
+        background-color: #ff6b6b;
+        box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+    }
 </style>
