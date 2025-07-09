@@ -1,2 +1,100 @@
-<script>window.ankiShowSolution = true;</script>
+<script>
+// anki-persistence library - same as front side
+if (typeof(window.Persistence) === 'undefined') {
+    var _persistenceKey = 'github.com/SimonLammer/anki-persistence/';
+    var _defaultKey = '_default';
+    window.Persistence_sessionStorage = function() {
+        var isAvailable = false;
+        try {
+            if (typeof(window.sessionStorage) === 'object') {
+                isAvailable = true;
+                this.clear = function() {
+                    for (var i = 0; i < sessionStorage.length; i++) {
+                        var k = sessionStorage.key(i);
+                        if (k.indexOf(_persistenceKey) == 0) {
+                            sessionStorage.removeItem(k);
+                            i--;
+                        }
+                    }
+                };
+                this.setItem = function(key, value) {
+                    if (value == undefined) {
+                        value = key;
+                        key = _defaultKey;
+                    }
+                    sessionStorage.setItem(_persistenceKey + key, JSON.stringify(value));
+                };
+                this.getItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    return JSON.parse(sessionStorage.getItem(_persistenceKey + key));
+                };
+                this.removeItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    sessionStorage.removeItem(_persistenceKey + key);
+                };
+            }
+        } catch(err) {}
+        this.isAvailable = function() {
+            return isAvailable;
+        };
+    };
+    window.Persistence_windowKey = function(key) {
+        var isAvailable = false;
+        try {
+            if (typeof(window[key]) === 'object') {
+                isAvailable = true;
+                this.clear = function() {
+                    window[key] = {};
+                };
+                this.setItem = function(key, value) {
+                    if (value == undefined) {
+                        value = key;
+                        key = _defaultKey;
+                    }
+                    window[key][_persistenceKey + key] = value;
+                };
+                this.getItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    return window[key][_persistenceKey + key];
+                };
+                this.removeItem = function(key) {
+                    if (key == undefined) {
+                        key = _defaultKey;
+                    }
+                    delete window[key][_persistenceKey + key];
+                };
+            }
+        } catch(err) {}
+        this.isAvailable = function() {
+            return isAvailable;
+        };
+    };
+    window.Persistence = new Persistence_sessionStorage();
+    if (!window.Persistence.isAvailable()) {
+        window.Persistence = new Persistence_windowKey(window.location.href);
+        if (!window.Persistence.isAvailable()) {
+            window.Persistence = new Persistence_windowKey('anki-persistence');
+        }
+    }
+}
+
+// Set solution flag for back side
+if (window.Persistence && window.Persistence.isAvailable()) {
+    window.Persistence.setItem('showSolution', true);
+}
+</script>
 {{FrontSide}}
+<script>
+// Clear persistence after back side is shown to prevent bleeding into next card
+setTimeout(function() {
+    if (window.Persistence && window.Persistence.isAvailable()) {
+        window.Persistence.clear();
+    }
+}, 100);
+</script>
