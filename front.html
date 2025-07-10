@@ -24,7 +24,14 @@
     <!-- Tabelas serão criadas dinamicamente via JavaScript -->
     <div id="dynamic-table"></div>
 
-    <button id="sort-toggle" class="sort-button">🔄 Original Order</button>
+    <div class="sort-container">
+        <label for="sort-dropdown" class="sort-label">Sort terms:</label>
+        <select id="sort-dropdown" class="sort-select">
+            <option value="0">Random</option>
+            <option value="1">A-Z</option>
+            <option value="2">Z-A</option>
+        </select>
+    </div>
     <div id="terms-container"></div>
     <div id="checkButton" class="button-like">Check Answers</div>
     <div id="resetButton" class="button-like" style="display:none;">Reset</div>
@@ -71,19 +78,14 @@
         // Sort state variables
         let sortState = 0; // 0: original, 1: ascending, 2: descending
         
-        function initializeSortButton() {
-            const sortButton = document.getElementById('sort-toggle');
-            if (sortButton) {
-                sortButton.onclick = toggleSort;
+        function initializeSortDropdown() {
+            const sortDropdown = document.getElementById('sort-dropdown');
+            if (sortDropdown) {
+                sortDropdown.addEventListener('change', function() {
+                    sortState = parseInt(this.value);
+                    applySortToRemainingTerms();
+                });
             }
-        }
-
-        function toggleSort() {
-            sortState = (sortState + 1) % 3;
-            const stateLabels = ['🔄 Original Order', '🔤 A-Z', '🔤 Z-A'];
-            
-            document.getElementById('sort-toggle').innerHTML = stateLabels[sortState];
-            applySortToRemainingTerms();
         }
 
         function applySortToRemainingTerms() {
@@ -136,8 +138,8 @@
                 if (termsContainerParam) termsContainerParam.style.display = 'none';
                 const checkButton = document.getElementById("checkButton");
                 if (checkButton) checkButton.style.display = 'none';
-                const sortButton = document.getElementById("sort-toggle");
-                if (sortButton) sortButton.style.display = 'none';
+                const sortContainer = document.querySelector(".sort-container");
+                if (sortContainer) sortContainer.style.display = 'none';
                 return;
             }
             
@@ -163,8 +165,8 @@
 
             document.getElementById("resetButton").style.display = 'none';
             
-            // Initialize sort button
-            initializeSortButton();
+            // Initialize sort dropdown
+            initializeSortDropdown();
         }
 
         function clearTable() {
