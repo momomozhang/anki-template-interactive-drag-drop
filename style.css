@@ -166,4 +166,37 @@
         background-color: #ff6b6b;
         box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
     }
+
+    /* Terms container flex styling for sorting */
+    #terms-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 20px;
+    }
+
+    /* Sort button styles */
+    .sort-button {
+        display: block;
+        margin: 0 auto 15px;
+        padding: 8px 16px;
+        font-size: 13px;
+        background-color: #58cc02;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        text-align: center;
+        user-select: none;
+        transition: background-color 0.3s ease;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .sort-button:hover {
+        background-color: #419d01;
+    }
+
+    .sort-button:active {
+        background-color: #2e7201;
+    }
 </style>

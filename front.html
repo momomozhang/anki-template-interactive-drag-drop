@@ -24,6 +24,7 @@
     <!-- Tabelas serão criadas dinamicamente via JavaScript -->
     <div id="dynamic-table"></div>
 
+    <button id="sort-toggle" class="sort-button">🔄 Original Order</button>
     <div id="terms-container"></div>
     <div id="checkButton" class="button-like">Check Answers</div>
     <div id="resetButton" class="button-like" style="display:none;">Reset</div>
@@ -67,6 +68,48 @@
 
         const termsContainer = document.getElementById("terms-container");
 
+        // Sort state variables
+        let sortState = 0; // 0: original, 1: ascending, 2: descending
+        
+        function initializeSortButton() {
+            const sortButton = document.getElementById('sort-toggle');
+            if (sortButton) {
+                sortButton.onclick = toggleSort;
+            }
+        }
+
+        function toggleSort() {
+            sortState = (sortState + 1) % 3;
+            const stateLabels = ['🔄 Original Order', '🔤 A-Z', '🔤 Z-A'];
+            
+            document.getElementById('sort-toggle').innerHTML = stateLabels[sortState];
+            applySortToRemainingTerms();
+        }
+
+        function applySortToRemainingTerms() {
+            const remainingTerms = Array.from(document.querySelectorAll('#terms-container .term'));
+            
+            switch(sortState) {
+                case 0: // original order
+                    remainingTerms.forEach(term => {
+                        term.style.order = term.dataset.originalOrder || '';
+                    });
+                    break;
+                case 1: // ascending
+                    remainingTerms.sort((a, b) => a.textContent.localeCompare(b.textContent))
+                                 .forEach((term, index) => {
+                                     term.style.order = index;
+                                 });
+                    break;
+                case 2: // descending
+                    remainingTerms.sort((a, b) => b.textContent.localeCompare(a.textContent))
+                                 .forEach((term, index) => {
+                                     term.style.order = index;
+                                 });
+                    break;
+            }
+        }
+
         function initializeGame(layoutParam, validTermsParam, allTermsParam, termsContainerParam) {
             clearTable();
             
@@ -93,12 +136,14 @@
                 if (termsContainerParam) termsContainerParam.style.display = 'none';
                 const checkButton = document.getElementById("checkButton");
                 if (checkButton) checkButton.style.display = 'none';
+                const sortButton = document.getElementById("sort-toggle");
+                if (sortButton) sortButton.style.display = 'none';
                 return;
             }
             
             // Original game logic
             allTermsParam = allTermsParam.sort(() => Math.random() - 0.5);
-            termsContainerParam.innerHTML = allTermsParam.map(term => `<div class="term draggable" draggable="true">${term}</div>`).join('');
+            termsContainerParam.innerHTML = allTermsParam.map((term, index) => `<div class="term draggable" draggable="true" data-original-order="${index}">${term}</div>`).join('');
 
             const draggableItems = document.querySelectorAll('.draggable');
             draggableItems.forEach(item => {
@@ -117,6 +162,9 @@
             termsContainerParam.addEventListener('drop', drop);
 
             document.getElementById("resetButton").style.display = 'none';
+            
+            // Initialize sort button
+            initializeSortButton();
         }
 
         function clearTable() {
@@ -198,7 +246,7 @@
                     // Handle insertion before/after existing term
                     const rect = targetZone.getBoundingClientRect();
                     const midpoint = rect.left + rect.width / 2;
-                    const newTerm = `<div class="term draggable" draggable="true">${term}</div>`;
+                    const newTerm = `<div class="term draggable" draggable="true" data-original-order="${document.querySelectorAll('#terms-container .term').length}">${term}</div>`;
                     
                     if (e.clientX < midpoint) {
                         // Insert before the target term
@@ -211,7 +259,7 @@
                     // Drop into terms container - check if dropping at beginning or end
                     const containerRect = targetZone.getBoundingClientRect();
                     const firstTerm = targetZone.querySelector('.term');
-                    const newTerm = `<div class="term draggable" draggable="true">${term}</div>`;
+                    const newTerm = `<div class="term draggable" draggable="true" data-original-order="${document.querySelectorAll('#terms-container .term').length}">${term}</div>`;
                     
                     if (firstTerm) {
                         const firstTermRect = firstTerm.getBoundingClientRect();
@@ -228,7 +276,7 @@
                     }
                 } else {
                     // Drop into dropzone (append at end)
-                    targetZone.innerHTML += `<div class="term draggable" draggable="true">${term}</div>`;
+                    targetZone.innerHTML += `<div class="term draggable" draggable="true" data-original-order="${document.querySelectorAll('#terms-container .term').length}">${term}</div>`;
                 }
 
                 const draggedItem = document.querySelector(`.draggable.hide`);
