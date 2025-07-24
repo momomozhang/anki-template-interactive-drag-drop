@@ -67,6 +67,11 @@
             document.getElementById("terms9-field").innerText.split("|")
         ];
 
+        // Debug logging
+        console.log('Headers array:', headers);
+        console.log('Header9 specifically:', headers[8]);
+        console.log('Terms9 specifically:', terms[8]);
+
         // Filtrar cabeçalhos e termos que estão em branco
         const validHeaders = headers.filter((header, index) => header.trim() !== "" && terms[index].length > 0);
         const validTerms = terms.filter((termList, index) => headers[index].trim() !== "" && termList.length > 0);
