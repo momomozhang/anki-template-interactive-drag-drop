@@ -78,9 +78,25 @@
 
         let allTerms = validTerms.flat(); // Todos os termos para embaralhar
 
+        // Shuffle function to randomize header order and prevent muscle memory
+        function shuffleArrays(arr1, arr2) {
+            const indices = Array.from({length: arr1.length}, (_, i) => i);
+            
+            // Fisher-Yates shuffle
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            
+            return [indices.map(i => arr1[i]), indices.map(i => arr2[i])];
+        }
+
+        // Randomize header and terms order to prevent positional learning
+        const [shuffledHeaders, shuffledTerms] = shuffleArrays(validHeaders, validTerms);
+
         // Criar dinamicamente a tabela com base no layout e cabeçalhos válidos
         const dynamicTable = document.getElementById("dynamic-table");
-        dynamicTable.innerHTML = generateTable(layout, validHeaders);
+        dynamicTable.innerHTML = generateTable(layout, shuffledHeaders);
 
         const termsContainer = document.getElementById("terms-container");
 
@@ -313,7 +329,7 @@
         }
 
         document.getElementById("checkButton").addEventListener('click', checkAnswers);
-        document.getElementById("resetButton").addEventListener('click', () => initializeGame(layout, validTerms, allTerms, termsContainer));
+        document.getElementById("resetButton").addEventListener('click', () => initializeGame(layout, shuffledTerms, allTerms, termsContainer));
 
         function checkAnswers() {
             const dropzones = document.querySelectorAll('.dropzone');
@@ -321,7 +337,7 @@
             // Verificar os termos nas caixas (dropzones)
             dropzones.forEach((zone, index) => {
                 const termsInZone = Array.from(zone.getElementsByClassName('term'));
-                const expectedTerms = validTerms[index]; // Usa apenas termos válidos
+                const expectedTerms = shuffledTerms[index]; // Usa apenas termos válidos
 
                 termsInZone.forEach(termElement => {
                     const term = termElement.innerText.trim(); // Remover espaços desnecessários ao redor do termo
@@ -350,7 +366,7 @@
                         // Adiciona ícone de -1
                         termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
                         // Find and show correct category
-                        const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                        const correctCategory = findCorrectCategory(term, shuffledTerms, shuffledHeaders);
                         if (correctCategory) {
                             termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
                         }
@@ -370,7 +386,7 @@
                 termElement.insertAdjacentHTML('beforeend', '<div class="question-minus-one"></div>');
                 // Find and show correct category for forgotten terms
                 const term = termElement.innerText.trim();
-                const correctCategory = findCorrectCategory(term, validTerms, validHeaders);
+                const correctCategory = findCorrectCategory(term, shuffledTerms, shuffledHeaders);
                 if (correctCategory) {
                     termElement.insertAdjacentHTML('beforeend', `<div class="correct-answer-hint">${correctCategory}</div>`);
                 }
@@ -379,7 +395,7 @@
             document.getElementById("resetButton").style.display = 'block';
         }
 
-        initializeGame(layout, validTerms, allTerms, termsContainer);
+        initializeGame(layout, shuffledTerms, allTerms, termsContainer);
     }
 
     function findCorrectCategory(term, validTerms, validHeaders) {
